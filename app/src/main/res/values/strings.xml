@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">DirtySprite</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="yes">yes</string>
+    <string name="no">no</string>
+    <string name="exitConfirmation">Close app: Are you sure?</string>
+</resources>
