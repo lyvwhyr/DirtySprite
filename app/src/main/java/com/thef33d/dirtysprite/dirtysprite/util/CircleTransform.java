@@ -36,7 +36,7 @@ public class CircleTransform implements Transformation {
         avatarPaint.setShader(shader);
 
         Paint outlinePaint = new Paint();
-        outlinePaint.setColor(Color.parseColor("#42A5F5"));
+        outlinePaint.setColor(Color.WHITE);
         outlinePaint.setStyle(Paint.Style.STROKE);
         outlinePaint.setStrokeWidth(STROKE_WIDTH);
         outlinePaint.setAntiAlias(true);
