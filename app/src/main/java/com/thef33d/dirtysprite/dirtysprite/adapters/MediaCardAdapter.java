@@ -1,24 +1,31 @@
 package com.thef33d.dirtysprite.dirtysprite.adapters;
 
+import android.app.DownloadManager;
 import android.content.Context;
 
 import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Environment;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.VideoView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 import com.thef33d.dirtysprite.dirtysprite.R;
 import com.thef33d.dirtysprite.dirtysprite.models.Media;
 import com.thef33d.dirtysprite.dirtysprite.util.CircleTransform;
+import com.thef33d.dirtysprite.dirtysprite.util.Downloader;
+import com.thef33d.dirtysprite.dirtysprite.util.Logger;
 import com.yqritc.scalablevideoview.ScalableType;
 import com.yqritc.scalablevideoview.ScalableVideoView;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -29,6 +36,9 @@ public class MediaCardAdapter extends RecyclerView.Adapter<MediaCardAdapter.Card
         private ArrayList<Media> mediaItems;
         // Store the context for easy access
         private Context mContext;
+        // store current item
+        private Media curItem;
+
 
         public MediaCardAdapter(Context context, ArrayList<Media> items) {
             mContext = context;
@@ -51,18 +61,19 @@ public class MediaCardAdapter extends RecyclerView.Adapter<MediaCardAdapter.Card
             Context context = parent.getContext();
             LinearLayout v = (LinearLayout) LayoutInflater.from(context)
                     .inflate(R.layout.media_card_view, parent, false);
-            CardViewHolder vh = new MediaCardAdapter.CardViewHolder(v);
-
-            return vh;
+            return new MediaCardAdapter.CardViewHolder(v);
         }
 
         @Override
         public void onBindViewHolder(CardViewHolder cardViewHolder, int i) {
-            Media curItem = mediaItems.get(i);
+            curItem = mediaItems.get(i);
             cardViewHolder.setText(curItem.creatorName);
             cardViewHolder.SetImage(curItem.previewImg);
             cardViewHolder.setAvi(curItem.creatorAvi);
             cardViewHolder.setVideo(curItem.video);
+            cardViewHolder.mCardImageUrl = curItem.image;
+            cardViewHolder.mCardVideoUrl = curItem.video;
+
         }
 
         @Override
@@ -73,17 +84,46 @@ public class MediaCardAdapter extends RecyclerView.Adapter<MediaCardAdapter.Card
         public static class CardViewHolder extends RecyclerView.ViewHolder {
             public TextView mCardUrl;
             public ImageView mCardImage;
+            public String mCardImageUrl;
             public ImageView mCardAvi;
+            public ImageButton mCardSaveButton;
             public ScalableVideoView mCardVideo;
+            public String mCardVideoUrl;
             public Context cardViewContext;
 
             public CardViewHolder(LinearLayout itemView) {
                 super(itemView);
+
                 cardViewContext = itemView.getContext();
-                mCardUrl = (TextView) itemView.findViewById(R.id.tvCount);
+                mCardUrl = (TextView) itemView.findViewById(R.id.user_name);
                 mCardImage = (ImageView) itemView.findViewById(R.id.imageView);
                 mCardAvi = (ImageView) itemView.findViewById(R.id.avi_image_view);
                 mCardVideo = (ScalableVideoView) itemView.findViewById(R.id.card_video_view);
+                mCardSaveButton = (ImageButton) itemView.findViewById(R.id.save_icon_image);
+
+                mCardSaveButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        String downloadUrl;
+                        String fileName;
+                        if (mCardVideoUrl == null || mCardVideoUrl.isEmpty()) {
+                            downloadUrl = mCardImageUrl;
+                        }
+                        else {
+                            downloadUrl =mCardVideoUrl;
+                        }
+                        fileName = Uri.parse(downloadUrl).getLastPathSegment();
+                        String fileDirectory = Environment.DIRECTORY_DOWNLOADS + "/dirtySprite";
+                        Environment.getExternalStoragePublicDirectory(fileDirectory)
+                                .mkdirs();
+
+                        File f = new File(Environment.getExternalStoragePublicDirectory(fileDirectory), fileName);
+                        long id = Downloader.start(cardViewContext, downloadUrl, f);
+
+                        Logger.d("Downloading " +  fileName);
+                        Toast.makeText(cardViewContext, "Downloading " + fileName, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
 
             public void setAvi(String avi) {
@@ -124,7 +164,8 @@ public class MediaCardAdapter extends RecyclerView.Adapter<MediaCardAdapter.Card
 
                     try {
                         mCardVideo.setDataSource(videoUrl);
-                        mCardVideo.setScalableType(ScalableType.FIT_START);
+                        mCardVideo.setScalableType(ScalableType.CENTER_CROP);
+                        mCardVideo.invalidate();
                         mCardVideo.setVolume(0, 0);
                         mCardVideo.setLooping(true);
                         mCardVideo.prepareAsync(new MediaPlayer.OnPreparedListener() {

@@ -1,6 +1,10 @@
 package com.thef33d.dirtysprite.dirtysprite;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -29,7 +33,7 @@ import jp.wasabeef.recyclerview.adapters.SlideInBottomAnimationAdapter;
 import jp.wasabeef.recyclerview.animators.FadeInDownAnimator;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
 
     private RecyclerView mRecyclerView;
@@ -55,6 +59,8 @@ public class MainActivity extends AppCompatActivity {
 
         ClipboardHelper.startService(this);
 
+        isStoragePermissionGranted();
+
         mRecyclerView = (RecyclerView) findViewById(R.id.media_cards);
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
@@ -79,18 +85,7 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setAdapter(slideInAdapter);
         //mRecyclerView.setAdapter(mAdapter);
 
-
         myWebView = (WebView) findViewById(R.id.web_scrapper_view);
-
-
-        /*
-        for (int i = 0; i < (mediaItems.size() - 1); i++) {
-            lastMediaItem = mediaItems.get(i);
-            Logger.d("Scrapper: Loading url " + lastMediaItem.url);
-            myWebView.loadUrl(lastMediaItem.url);
-            myWebView.evaluateJavascript(jsBodyScrape, null);
-        }
-        */
 
         scrapeUrls();
     }
@@ -154,6 +149,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onReceivedError(WebView v, WebResourceRequest req, WebResourceError e) {
                     String url = v.getUrl();
                     Logger.d("Scrapper: Error loading URL " + url);
+                    Logger.d(e.toString());
                     Toast.makeText(getApplicationContext(), "Failed to load url: " + url, Toast.LENGTH_SHORT).show();
                     unParsedMedia.remove(0);
                     scraperBusy = false;
@@ -204,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * retrive media list data from database
+     * retrieve media list data from database
      */
     private ArrayList<Media> getParsedMedia() {
         MediaSource mediaSource;
@@ -213,13 +209,13 @@ public class MainActivity extends AppCompatActivity {
             mediaSource = mDataSource.getMediaSource();
             mediaList = mediaSource.getParsedMedia();
         } catch (Exception e) {
-            Logger.d("Failed to retrive media list");
+            Logger.d("Failed to retrieve media list");
         }
         return mediaList;
     }
 
     /**
-     * retrive media list data from database
+     * retrieve media list data from database
      */
     private ArrayList<Media> getUnparsedMedia() {
         MediaSource mediaSource;
@@ -228,11 +224,38 @@ public class MainActivity extends AppCompatActivity {
             mediaSource = mDataSource.getMediaSource();
             mediaList = mediaSource.getUnparsedMedia();
         } catch (Exception e) {
-            Logger.d("Failed to retrive media list");
+            Logger.d("Failed to retrieve media list");
         }
         return mediaList;
     }
 
+    public  boolean isStoragePermissionGranted() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                Logger.d("MainActivity: Permission is granted");
+                return true;
+            } else {
+
+                Logger.d("MainActivity: Permission is revoked");
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                return false;
+            }
+        }
+        else { //permission is automatically granted on sdk<23 upon installation
+            Logger.d("MainActivity: Permission is granted");
+            return true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Logger.d("MainActivity: Permission: " + permissions[0] + "was " + grantResults[0]);
+            //resume tasks needing this permission
+        }
+    }
 
 }
 

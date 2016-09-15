@@ -90,7 +90,6 @@ public class InstagramParser extends Media {
             if(aviUrl.matches(IG_SIZE_MATCH)) {
 
                 aviUrl = aviUrl.replaceAll(IG_SIZE_REPLACE, "/s200x200/");
-                Logger.d("IG_PARSER: matched size regex " + aviUrl);
             }
             /**
              * TODO: parse full sized version of image to resized 200x200
@@ -134,7 +133,7 @@ public class InstagramParser extends Media {
         String imgSelector = "article > div > div > div img ";
         String imageUrl = parser(html, imgSelector, EXTRACT_SOURCE);
         if(imageUrl != null) {
-            imageUrl.replaceAll(IG_SIZE_REPLACE, "");
+            imageUrl = imageUrl.replaceAll(IG_SIZE_REPLACE, "");
         }
         return imageUrl;
     }
@@ -147,8 +146,8 @@ public class InstagramParser extends Media {
             return Utils.isoFormat.parse(isoPostDate);
         }
         catch(ParseException e) {
-            Logger.d("Failed to parse post date from Instagram Post");
-            Logger.d(e.getMessage());
+            Log.d("InstagramParser","Failed to parse post date from Instagram Post");
+            //Log.d(e.getMessage());
             return null;
         }
 
